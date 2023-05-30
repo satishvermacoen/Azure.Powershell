@@ -1,0 +1,149 @@
+PS C:\Users\Asus> Connect-AzAccount                                                                                                                                                                                                       Account                                    SubscriptionName TenantId                             Environment         -------                                    ---------------- --------                             -----------         Satish@rathoraman2012gmail.onmicrosoft.com Free Trial       3b0670d0-237c-4d07-9844-6c4e8995339c AzureCloud
+
+
+PS C:\Users\Asus> New-AzResourceGroup -Name TutorialResources -Location eastus
+
+
+ResourceGroupName : TutorialResources
+Location          : eastus
+ProvisioningState : Succeeded
+Tags              :
+ResourceId        : /subscriptions/08e6467a-9038-461a-ac93-2860b4348ac7/resourceGroups/TutorialResources
+
+
+
+PS C:\Users\Asus> $cred = Get-Credential -Message "Enter a username and password for the virtual machine."
+PS C:\Users\Asus> $vmParams = @{
+>>   ResourceGroupName = 'TutorialResources'
+>>   Name = 'TutorialVM1'
+>>   Location = 'eastus'
+>>   ImageName = 'Win2016Datacenter'
+>>   PublicIpAddressName = 'tutorialPublicIp'
+>>   Credential = $cred
+>>   OpenPorts = 3389
+>>   Size = 'Standard_D2s_v3'
+>> }
+PS C:\Users\Asus> $newVM1 = New-AzVM @vmParams
+WARNING: Upcoming breaking changes in the cmdlet 'New-AzVM' :
+Consider using the image alias including the version of the distribution you want to use in the "-Image" parameter
+of the "New-AzVM" cmdlet. On April 30, 2023, the image deployed using `UbuntuLTS` will reach its end of life. In
+October 2023, the aliases `UbuntuLTS`, `CentOS`, `Debian`, and `RHEL` will be removed.
+Starting in November 2023 the "New-AzVM" cmdlet will deploy with the Trusted Launch configuration by default. To
+know more about Trusted Launch, please visit https://docs.microsoft.com/en-us/azure/virtual-machines/trusted-launch
+It is recommended to use parameter "-PublicIpSku Standard" in order to create a new VM with a Standard public
+IP.Specifying zone(s) using the "-Zone" parameter will also result in a Standard public IP.If "-Zone" and
+"-PublicIpSku" are not specified, the VM will be created with a Basic public IP instead.Please note that the
+Standard SKU IPs will become the default behavior for VM creation in the future
+Note : Go to https://aka.ms/azps-changewarnings for steps to suppress this breaking change warning, and other
+information on breaking changes in Azure PowerShell.
+PS C:\Users\Asus> $newVM1
+
+
+ResourceGroupName        : TutorialResources
+Id                       : /subscriptions/08e6467a-9038-461a-ac93-2860b4348ac7/resourceGroups/TutorialResources/prov
+iders/Microsoft.Compute/virtualMachines/TutorialVM1
+VmId                     : 89bbf3e1-aeab-46d7-b10a-6490c381c7c1
+Name                     : TutorialVM1
+Type                     : Microsoft.Compute/virtualMachines
+Location                 : eastus
+Tags                     : {}
+HardwareProfile          : {VmSize}
+NetworkProfile           : {NetworkInterfaces}
+OSProfile                : {ComputerName, AdminUsername, WindowsConfiguration, Secrets, AllowExtensionOperations,
+RequireGuestProvisionSignal}
+ProvisioningState        : Succeeded
+StorageProfile           : {ImageReference, OsDisk, DataDisks}
+FullyQualifiedDomainName : tutorialvm1-c96399.eastus.cloudapp.azure.com
+TimeCreated              : 5/29/2023 11:26:07 PM
+
+PS C:\Users\Asus> $newVM1.OSProfile | Select-Object -Property ComputerName,AdminUserName                                                                                                                                                  ComputerName AdminUsername                                                                                           ------------ -------------                                                                                           TutorialVM1  satish                                                                                                                                                                                                                       
+PS C:\Users\Asus> $newVM1 | Get-AzNetworkInterface |
+>>   Select-Object -ExpandProperty IpConfigurations |
+>>     Select-Object -Property Name, PrivateIpAddress
+WARNING: The names of some imported commands from the module 'Microsoft.Azure.PowerShell.Cmdlets.Network' include
+unapproved verbs that might make them less discoverable. To find the commands with unapproved verbs, run the
+Import-Module command again with the Verbose parameter. For a list of approved verbs, type Get-Verb.
+
+Name        PrivateIpAddress
+----        ----------------
+TutorialVM1 192.168.1.4
+
+
+PS C:\Users\Asus> $publicIp = Get-AzPublicIpAddress -Name tutorialPublicIp -ResourceGroupName TutorialResources
+PS C:\Users\Asus>
+PS C:\Users\Asus> $publicIp |
+>>   Select-Object -Property Name, IpAddress, @{label='FQDN';expression={$_.DnsSettings.Fqdn}}
+
+Name             IpAddress      FQDN
+----             ---------      ----
+tutorialPublicIp 20.231.200.216 tutorialvm1-c96399.eastus.cloudapp.azure.com
+
+PS C:\Users\Asus> mstsc.exe /v $publicIp.IpAddress
+----------------------------------------------------
+## Creating a new VM on the existing subnet
+
+PS C:\Users\Asus> $vm2Params = @{
+>>   ResourceGroupName = 'TutorialResources'
+>>   Name = 'TutorialVM2'
+>>   ImageName = 'Win2016Datacenter'
+>>   VirtualNetworkName = 'TutorialVM1'
+>>   SubnetName = 'TutorialVM1'
+>>   PublicIpAddressName = 'tutorialPublicIp2'
+>>   Credential = $cred
+>>   OpenPorts = 3389
+>> }
+PS C:\Users\Asus> $newVM2 = New-AzVM @vm2Params
+WARNING: Upcoming breaking changes in the cmdlet 'New-AzVM' :
+Consider using the image alias including the version of the distribution you want to use in the "-Image" parameter
+of the "New-AzVM" cmdlet. On April 30, 2023, the image deployed using `UbuntuLTS` will reach its end of life. In
+October 2023, the aliases `UbuntuLTS`, `CentOS`, `Debian`, and `RHEL` will be removed.
+Starting in November 2023 the "New-AzVM" cmdlet will deploy with the Trusted Launch configuration by default. To
+know more about Trusted Launch, please visit https://docs.microsoft.com/en-us/azure/virtual-machines/trusted-launch
+It is recommended to use parameter "-PublicIpSku Standard" in order to create a new VM with a Standard public
+IP.Specifying zone(s) using the "-Zone" parameter will also result in a Standard public IP.If "-Zone" and
+"-PublicIpSku" are not specified, the VM will be created with a Basic public IP instead.Please note that the
+Standard SKU IPs will become the default behavior for VM creation in the future
+Note : Go to https://aka.ms/azps-changewarnings for steps to suppress this breaking change warning, and other
+information on breaking changes in Azure PowerShell.
+No Size value has been provided. The VM will be created with the default size Standard_D2s_v3.
+PS C:\Users\Asus>
+PS C:\Users\Asus> $newVM2
+
+
+ResourceGroupName        : TutorialResources
+Id                       : /subscriptions/08e6467a-9038-461a-ac93-2860b4348ac7/resourceGroups/TutorialResources/prov
+iders/Microsoft.Compute/virtualMachines/TutorialVM2
+VmId                     : 4f090252-8b23-4f70-9ead-0efa0325734f
+Name                     : TutorialVM2
+Type                     : Microsoft.Compute/virtualMachines
+Location                 : eastus
+Tags                     : {}
+HardwareProfile          : {VmSize}
+NetworkProfile           : {NetworkInterfaces}
+OSProfile                : {ComputerName, AdminUsername, WindowsConfiguration, Secrets, AllowExtensionOperations,
+RequireGuestProvisionSignal}
+ProvisioningState        : Succeeded
+StorageProfile           : {ImageReference, OsDisk, DataDisks}
+FullyQualifiedDomainName : tutorialvm2-19532e.eastus.cloudapp.azure.com
+TimeCreated              : 5/29/2023 11:38:56 PM
+
+
+PS C:\Users\Asus> mstsc.exe /v $newVM2.FullyQualifiedDomainName
+
+## This is for clean up 
+
+PS C:\Users\Asus> $job = Remove-AzResourceGroup -name TutorialResources -Force -AsJob
+PS C:\Users\Asus> $job
+
+Id     Name            PSJobTypeName   State         HasMoreData     Location             Command
+--     ----            -------------   -----         -----------     --------             -------
+1      Long Running... AzureLongRun... Running       True            localhost            Remove-AzResourceGroup
+
+
+PS C:\Users\Asus> Wait-Job -Id $job.Id
+Id     Name            PSJobTypeName   State         HasMoreData     Location             Command
+--     ----            -------------   -----         -----------     --------             -------
+1      Long Running... AzureLongRun... Completed     True            localhost            Remove-AzResourceGroup
+
+
+PS C:\Users\Asus>
